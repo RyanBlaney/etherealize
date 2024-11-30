@@ -15,6 +15,17 @@ Etherealize is a portable workflow setup script designed to install and configur
 
 ---
 
+## **💻 Supported Operating Systems**
+
+Etherealize aims to support all major operating systems. Current compatibility includes:
+
+- **CentOS**: Fully tested and supported.
+- **Ubuntu/Debian**: Planned support.
+- **Arch Linux**: Planned support.
+- **macOS**: Planned support.
+- **NixOS**: Planned support.
+- **Windows**: Planned support.
+
 ## **💡 Features**
 
 ### **1. Advanced Bash Enhancements**
