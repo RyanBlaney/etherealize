@@ -2,6 +2,7 @@
 
 # Constants
 CONFIG_DIR="$HOME/.etherealize"
+NVIM_DIR="$HOME/.config/nvim"
 
 # Include helpers
 source "$CONFIG_DIR/helpers.sh"

@@ -26,7 +26,6 @@ alias ll="exa -l --group-directories-first --icons"
 alias cat="bat --style=plain --paging=never"
 alias grep="rg"
 alias find="fd"
-alias yazi="yazi"
 alias yazi="yy"
 alias silver="silver"
 
@@ -55,7 +54,7 @@ extract() {
 if [[ ! -d "$HOME/.local/share/blesh" ]]; then
     echo "ble.sh not found. Installing..."
     git clone --recursive https://github.com/akinomyoga/ble.sh.git "$HOME/.local/share/blesh"
-    bash "$HOME/.local/share/blesh/install.sh" --prefix="$HOME/.local"
+    bash "$HOME/.local/share/blesh/build.sh" --prefix="$HOME/.local"
 fi
 
 # Source ble.sh

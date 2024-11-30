@@ -54,12 +54,11 @@ Etherealize is a portable workflow setup script designed to install and configur
 
 1. Clone the Etherealize repository:
    ```bash
-   git clone https://github.com/RyanBlaney/etherealize.git ~/.etherealize
+   git clone git@github.com/RyanBlaney/etherealize.git ~/.etherealize
    ```
-
 2. Run the installer:
     ```bash
-    bash ~/.etherealize/install.sh
+    bash ~/etherealize/install.sh
     ```
 
 ## **📜 Philosophy**
