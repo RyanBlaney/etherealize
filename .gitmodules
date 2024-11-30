@@ -1,0 +1,12 @@
+[submodule ".tmux/plugins/tpm"]
+    path = .tmux/plugins/tpm
+    url = https://github.com/tmux-plugins/tpm
+[submodule ".tmux/plugins/tmux-fzf"]
+    path = .tmux/plugins/tmux-fzf
+    url = https://github.com/tmux-plugins/tmux-fzf
+[submodule ".tmux/plugins/tmux-kanagawa"]
+    path = .tmux/plugins/tmux-kanagawa
+    url = https://github.com/tmux-plugins/tmux-kanagawa
+[submodule ".tmux/plugins/tmu"]
+    path = .tmux/plugins/tmux
+    url = https://github.com/rose-pine/tmux
