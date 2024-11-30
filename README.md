@@ -67,7 +67,7 @@ Etherealize aims to support all major operating systems. Current compatibility i
 1. Clone the Etherealize repository:
 
    ```bash
-   git clone --recurse-submodules https://github.com/RyanBlaney/etherealize.git ~/.etherealize
+   git clone https://github.com/RyanBlaney/etherealize.git ~/.etherealize
    ```
 
 2. Run the installer
