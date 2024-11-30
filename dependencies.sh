@@ -10,16 +10,27 @@ install_dependencies() {
             echo "Installing macOS dependencies..."
             brew install kdabir/tap/has go python3 python3-pip openssh fzf
             build_firacode
+
+            mkdir -p "$HOME/Library/Preferences/rs.silver/"
+            cp -r "$CONFIG_DIR/silver.toml" "$HOME/Library/Preferences/rs.silver/silver.toml"
             ;;
         "Arch")
             echo "Installing Arch Linux dependencies..."
             sudo pacman -S go python3 python-pip openssh fzf 
             build_firacode
-            ;;
+
+            mkdir -p "$HOME/.config/silver"
+            cp -r "$CONFIG_DIR/silver.toml" "$HOME/.config/silver/silver.toml"
+           ;;
         "Ubuntu")
             echo "Installing Ubuntu/Debian dependencies..."
-            sudo apt update && sudo apt install -y golang python3 python3-pip openssh fzf
+            sudo apt update && sudo apt install -y golang python3 python3-pip \
+                openssh-server unzip build-essential fontconfig fzf libssl-dev cmake \
+                gettext libtool libtool-bin autoconf automake g++ pkg-config curl doxygen
             build_firacode
+
+            mkdir -p "$HOME/.config/silver"
+            cp -r "$CONFIG_DIR/silver.toml" "$HOME/.config/silver/silver.toml"
             ;;
         "CentOS")
             echo "Installing CentOS dependencies..."
@@ -28,6 +39,9 @@ install_dependencies() {
             sudo yum install -y golang python3 python3-pip openssh
             sudo dnf install fzf
             build_firacode
+
+            mkdir -p "$HOME/.config/silver"
+            cp -r "$CONFIG_DIR/silver.toml" "$HOME/.config/silver/silver.toml"
             ;;
         *)
             echo "Unsupported OS: $1"

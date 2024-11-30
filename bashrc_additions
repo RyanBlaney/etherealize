@@ -51,18 +51,18 @@ extract() {
     esac
 }
 
-# Load ble.sh (Advanced Line Editor for Bash)
+# Source ble.sh
 if [[ ! -d "$HOME/.local/share/blesh" ]]; then
     echo "ble.sh not found. Installing..."
-    git clone --recursive https://github.com/akinomyoga/ble.sh.git "$HOME/.local/share/blesh"
-    bash "$HOME/.local/share/blesh/build.sh" --prefix="$HOME/.local"
+    git clone --recursive --depth 1 --shallow-submodules https://github.com/akinomyoga/ble.sh.git
+    make -C ble.sh
+    mv "$HOME/ble.sh" "$HOME/.blesh"
 fi
 
-# Source ble.sh
-if [[ -f "$HOME/.local/share/blesh/ble.sh" ]]; then
-    source "$HOME/.local/share/blesh/ble.sh"
-else
-    echo "Error: ble.sh could not be sourced. Check installation."
+if [[ -f "$HOME/.blesh/out/ble.sh" ]]; then
+    source "$HOME/.blesh/out/ble.sh"
+else 
+    echo "Unable to source ble.sh"
 fi
 
 # Load tmux config

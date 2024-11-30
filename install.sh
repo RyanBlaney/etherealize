@@ -1,5 +1,21 @@
 #/bin/bash
 
+# Prompt for sudo password at the start
+echo "This script requires administrative privileges."
+sudo -v
+
+# Keep the sudo session alive for the duration of the script
+# This will run `sudo -v` in the background every 60 seconds
+# until the script finishes.
+(while true; do sudo -v; sleep 60; done) &
+
+# Store the PID of the background process
+KEEP_ALIVE_PID=$!
+
+# Ensure the script cleans up the background process on exit
+trap 'kill $KEEP_ALIVE_PID' EXIT
+
+
 # Constants
 CONFIG_DIR="$HOME/.etherealize"
 NVIM_DIR="$HOME/.config/nvim"
