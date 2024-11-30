@@ -17,15 +17,15 @@ Etherealize is a portable workflow setup script designed to install and configur
 
 ## **💡 Features**
 
-1. **Advanced Bash Enhancements**:
+### **1. Advanced Bash Enhancements**
    - Integrated with **ble.sh** for smooth, modern line editing and autocompletions.
    - Lightweight and modular Bash configurations that complement your existing setup.
 
-2. **Neovim Configuration**:
+### **2. Neovim Configuration**
    - Deploys a comprehensive Neovim setup sourced from [deployable-neovim-config](https://github.com/RyanBlaney/deployable-neovim-config).
-   - Automatically installs all plugins and dependencies to create a powerful text-editing environment.
+   - Automatically installs all plugins and dependencies for a powerful text-editing experience.
 
-3. **Rust-Powered Toolchain**:
+### **3. Rust-Powered Toolchain**
    - Leverages the performance and flexibility of Rust-based tools:
      - **fzf**: Fuzzy finder for interactive file and history searches.
      - **ripgrep**: Fast and intuitive file searching.
@@ -35,11 +35,11 @@ Etherealize is a portable workflow setup script designed to install and configur
      - **fd**: A user-friendly `find` command replacement.
      - **silver**: A minimalist yet elegant prompt for a polished terminal experience.
 
-4. **Cross-Platform Compatibility**:
+### **4. Cross-Platform Compatibility**
    - Supports macOS, Arch Linux, Ubuntu, CentOS, NixOS, and more.
    - Automatically detects and adapts to your operating system.
 
-5. **Essential Developer Tools**:
+### **5. Essential Developer Tools**
    - Installs and configures:
      - **Git**
      - **Luarocks**
@@ -53,32 +53,26 @@ Etherealize is a portable workflow setup script designed to install and configur
 ## **🚀 Installation**
 
 1. Clone the Etherealize repository:
+
    ```bash
-   git clone git@github.com/RyanBlaney/etherealize.git ~/.etherealize
+   git clone https://github.com/RyanBlaney/etherealize.git ~/.etherealize
    ```
-2. Run the installer:
+
+2. Run the installer
+
     ```bash
     bash ~/etherealize/install.sh
     ```
 
 ## **📜 Philosophy**
 
-**Etherealize** embodies a vision of simplicity and power. By seamlessly integrating modern tools, it transforms your terminal into a canvas of productivity and creativity. Each component is chosen with care to balance speed, functionality, and aesthetics, ensuring that your workflow feels as natural as it is effective.
+Etherealize embodies a vision of simplicity and power. By seamlessly integrating modern tools, it transforms your terminal into a canvas of productivity and creativity. Each component is chosen with care to balance speed, functionality, and aesthetics, ensuring that your workflow feels as natural as it is effective.
 
 ## **🛠️ Customization**
 
-**Etherealize** is designed to be modular and extendable. You can customize your setup by editing the following files:
+Etherealize is designed to be modular and extendable. You can customize your setup by editing the following files:
 
 - `~/.etherealize/bashrc_additions`: Add custom aliases, functions, or shell configurations.
 - `~/.config/nvim/init.lua`: Tailor your Neovim environment to your needs.
 - `~/.etherealize/dependencies.sh`: Add or modify dependencies for your workflow.
-
-## **💎 Contributions**
-
-**Etherealize** welcomes contributions to improve its functionality, compatibility, and elegance. Feel free to open issues or submit pull requests on the GitHub repository.
-
-## **📘 License**
-
-**Etherealize** is open-source and available under the MIT License.
-
 
