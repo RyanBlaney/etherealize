@@ -70,7 +70,7 @@ if [[ -d "$HOME/.etherealize/.tmux" ]]; then
     mv "$HOME/.etherealize/.tmux" "$HOME/.tmux" 
 fi
 
-if [[ -d "$HOME/.etherealize/.tmux.conf" ]]; then
+if [[ -f "$HOME/.etherealize/.tmux.conf" ]]; then
     mv "$HOME/.etherealize/.tmux.conf" "$HOME/.tmux.conf" 
 fi
 
