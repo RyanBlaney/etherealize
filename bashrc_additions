@@ -5,7 +5,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 
 # Enable Silver prompt
 if command -v silver &> /dev/null; then
-    eval "$(silver init bash)"
+    source <(silver init)
 fi
 
 # Add fzf configuration
@@ -26,7 +26,8 @@ alias ll="exa -l --group-directories-first --icons"
 alias cat="bat --style=plain --paging=never"
 alias grep="rg"
 alias find="fd"
-alias yazi="yy"
+alias yazi="yazi"
+alias yy="yazi"
 alias silver="silver"
 
 # Functions
@@ -62,5 +63,14 @@ if [[ -f "$HOME/.local/share/blesh/ble.sh" ]]; then
     source "$HOME/.local/share/blesh/ble.sh"
 else
     echo "Error: ble.sh could not be sourced. Check installation."
+fi
+
+# Load tmux config
+if [[ -d "$HOME/.etherealize/.tmux" ]]; then
+    mv "$HOME/.etherealize/.tmux" "$HOME/.tmux" 
+fi
+
+if [[ -d "$HOME/.etherealize/.tmux.conf" ]]; then
+    mv "$HOME/.etherealize/.tmux.conf" "$HOME/.tmux.conf" 
 fi
 

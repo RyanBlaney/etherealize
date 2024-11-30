@@ -8,21 +8,26 @@ install_dependencies() {
             ;;
         "Mac")
             echo "Installing macOS dependencies..."
-            brew install kdabir/tap/has go python3 python3-pip openssh fzf yazi
+            brew install kdabir/tap/has go python3 python3-pip openssh fzf
+            build_firacode
             ;;
         "Arch")
             echo "Installing Arch Linux dependencies..."
-            sudo pacman -S go python3 python-pip openssh fzf yazi
+            sudo pacman -S go python3 python-pip openssh fzf 
+            build_firacode
             ;;
         "Ubuntu")
             echo "Installing Ubuntu/Debian dependencies..."
-            sudo apt update && sudo apt install -y golang python3 python3-pip openssh fzf yazi
+            sudo apt update && sudo apt install -y golang python3 python3-pip openssh fzf
+            build_firacode
             ;;
         "CentOS")
             echo "Installing CentOS dependencies..."
-            sudo yum groupinstall "Development Tools"
-            sudo yum install -y gcc gcc-c++ make cmake gettext
-            sudo yum install -y epel-release golang python3 python3-pip openssh fzf yazi
+            sudo yum install -y gcc gcc-c++ make cmake gettext libevent libevent-devel ncurses ncurses-devel
+            sudo yum install -y epel-release 
+            sudo yum install -y golang python3 python3-pip openssh
+            sudo dnf install fzf
+            build_firacode
             ;;
         *)
             echo "Unsupported OS: $1"
@@ -31,10 +36,58 @@ install_dependencies() {
 
     # Install universal Rust-based tools
     echo "Installing Rust-based tools..."
-    cargo install ripgrep exa bat zoxide silver fd-find
+    cargo install ripgrep exa bat zoxide silver fd-find btop stylua
+    cargo install --locked yazi-fm yazi-cli
+
+    # Install ripgrep
+    build_ripgrep
+    
+    # Install Golang tools
+    go install mvdan.cc/gofumpt@latest
+    go install github.com/segmentio/golines@latest
+    go install golang.org/x/tools/cmd/goimports@latest
 
     build_neovim
     build_luarocks
+}
+
+build_ripgrep() {
+    git clone https://github.com/BurntSushi/ripgrep.git ~/ripgrep
+    cd ~/ripgrep
+    cargo build --release --features 'pcre2'
+    sudo mv target/release/rg ~/.cargo/bin/ripgrep
+    rm -rf ~/ripgrep
+}
+
+build_firacode() {
+    cd ~
+    curl -L -o FiraCode.zip https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip
+    unzip FiraCode.zip -d FiraCode
+    mkdir -p ~/.local/share/fonts
+    cp FiraCode/ttf/*.ttf ~/.local/share/fonts/
+    fc-cache -fv
+    rm -rf ~/FiraCode.zip ~/FiraCode
+}
+
+build_firacode_mac() {
+    cd ~
+    curl -L -o FiraCode.zip https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip
+    unzip FiraCode.zip -d FiraCode
+    mkdir -p ~/.local/share/fonts
+    cp FiraCode/ttf/*.ttf ~/Library/Fonts/
+    fc-cache -fv
+    rm -rf ~/FiraCode.zip ~/FiraCode
+}
+
+build_tmux() {
+    curl -L -O https://github.com/tmux/tmux/releases/download/3.5/tmux-3.5.tar.gz
+    tar -zxf tmux-3.5.tar.gz
+    cd tmux-3.5
+    ./configure
+    make
+    sudo make install
+    cd ..
+    rm -rf tmux-3.5 tmux-3.5.tar.gz
 }
 
 build_neovim() {
@@ -53,15 +106,24 @@ build_neovim() {
 }
 
 build_luarocks() {
-    echo "Building LuaRocks from source..."
-    curl -R -O https://luarocks.org/releases/luarocks-3.9.1.tar.gz
-    tar zxpf luarocks-3.9.1.tar.gz
-    cd luarocks-3.9.1
-    ./configure --lua-version=5.1 --with-lua-include=/usr/include
-    make
+    echo "Building Lua from source..."
+    curl -R -O https://www.lua.org/ftp/lua-5.4.4.tar.gz
+    tar zxf lua-5.4.4.tar.gz
+    cd lua-5.4.4
+    make linux
     sudo make install
     cd ..
-    rm -rf luarocks-3.9.1.tar.gz luarocks-3.9.1
+    rm -rf lua-5.4.4 lua-5.4.4.tar.gz
+
+    echo "Building LuaRocks from source..."
+    curl -R -O https://luarocks.github.io/luarocks/releases/luarocks-3.11.1.tar.gz
+    tar zxpf luarocks-3.11.1.tar.gz
+    cd luarocks-3.11.1
+    ./configure --lua-suffix=5.4 --with-lua-include=/usr/local/include
+    make
+    sudo make install    
+    cd ..
+    rm -rf luarocks-3.11.1.tar.gz luarocks-3.11.1
     echo "LuaRocks installed successfully!"
 }
 
