@@ -65,9 +65,9 @@ else
     echo "Unable to source ble.sh"
 fi
 
-# Load tmux config
-if [[ -d "$HOME/.etherealize/.tmux" ]]; then
-    mv "$HOME/.etherealize/.tmux" "$HOME/.tmux" 
+if [[ ! -d "$HOME/.tmux" ]]; then
+    git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+    tmux run-shell ~/.tmux/plugins/tpm/bin/install_plugins
 fi
 
 if [[ -f "$HOME/.etherealize/.tmux.conf" ]]; then
