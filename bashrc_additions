@@ -1,76 +1,104 @@
-# ~/.etherealize/bashrc_additions
-
-# Add Rust tools to PATH
-export PATH="$HOME/.cargo/bin:$PATH"
-
-# Enable Silver prompt
-if command -v silver &> /dev/null; then
-    source <(silver init)
-fi
-
-# Add fzf configuration
-if command -v fzf &> /dev/null; then
-    export FZF_DEFAULT_COMMAND="rg --files --hidden --glob '!.git/*'"
-    export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border"
-    bind '"\C-r": "fzf-history-widget"'
-fi
-
-# Add zoxide configuration
-if command -v zoxide &> /dev/null; then
-    eval "$(zoxide init bash)"
-fi
-
-# Aliases
-alias ls="exa --group-directories-first --icons"
-alias ll="exa -l --group-directories-first --icons"
-alias cat="bat --style=plain --paging=never"
-alias grep="rg"
-alias find="fd"
-alias yazi="yazi"
-alias yy="yazi"
-alias silver="silver"
-
-# Functions
-mkcd() {
-    mkdir -p "$1" && cd "$1"
-}
-
-extract() {
-    case "$1" in
-        *.tar.bz2) tar xjf "$1" ;;
-        *.tar.gz) tar xzf "$1" ;;
-        *.bz2) bunzip2 "$1" ;;
-        *.rar) unrar x "$1" ;;
-        *.gz) gunzip "$1" ;;
-        *.tar) tar xf "$1" ;;
-        *.tbz2) tar xjf "$1" ;;
-        *.tgz) tar xzf "$1" ;;
-        *.zip) unzip "$1" ;;
-        *.7z) 7z x "$1" ;;
-        *) echo "Unknown file type: $1" ;;
+# OS and shell detection
+detect_os() {
+    case "$(uname -s)" in
+        Darwin*) echo "macos" ;;
+        Linux*)  echo "linux" ;;
+        *)       echo "unknown" ;;
     esac
 }
 
-# Source ble.sh
-if [[ ! -d "$HOME/.local/share/blesh" ]]; then
-    echo "ble.sh not found. Installing..."
-    git clone --recursive --depth 1 --shallow-submodules https://github.com/akinomyoga/ble.sh.git
-    make -C ble.sh
-    mv "$HOME/ble.sh" "$HOME/.blesh"
-fi
+detect_shell() {
+    if [[ -n "$ZSH_VERSION" ]]; then
+        echo "zsh"
+    elif [[ -n "$BASH_VERSION" ]]; then
+        echo "bash"
+    else
+        basename "$SHELL"
+    fi
+}
 
-if [[ -f "$HOME/.blesh/out/ble.sh" ]]; then
-    source "$HOME/.blesh/out/ble.sh"
-else 
-    echo "Unable to source ble.sh"
-fi
+# Environment setup
+setup_etherealize_environment() {
+    local os=$(detect_os)
+    local shell_type=$(detect_shell)
+    
+    # macOS-specific setup
+    if [[ "$os" == "macos" ]]; then
+        # Homebrew environment
+        if command -v brew &>/dev/null; then
+            eval "$(brew shellenv)"
+        elif [[ -x "/opt/homebrew/bin/brew" ]]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        elif [[ -x "/usr/local/bin/brew" ]]; then
+            eval "$(/usr/local/bin/brew shellenv)"
+        fi
+        
+        # Add common macOS paths
+        export PATH="/usr/local/bin:$PATH"
+        export PATH="/System/Cryptexes/App/usr/bin:$PATH"
+        
+        # macOS-specific aliases
+        alias ls='lsd'
+        alias ll='lsd -la'
+        alias tree='lsd --tree'
+    fi
+    
+    # Cross-platform Rust setup
+    [[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+    
+    # ble.sh setup (cross-platform)
+    if [[ "$shell_type" == "bash" ]] && [[ -f "$HOME/.local/share/blesh/ble.sh" ]]; then
+        source "$HOME/.local/share/blesh/ble.sh"
+    fi
+    
+    # tmux setup (cross-platform)
+    if command -v tmux &>/dev/null && [[ -z "$TMUX" ]] && [[ "$-" == *i* ]]; then
+        # Auto-attach to tmux session
+        if tmux has-session 2>/dev/null; then
+            exec tmux attach
+        else
+            exec tmux new-session
+        fi
+    fi
+    
+    # Silver prompt setup (if available)
+    if command -v silver &>/dev/null; then
+        export SILVER_SHELL="$shell_type"
+        case "$shell_type" in
+            bash) eval "$(silver init bash)" ;;
+            zsh)  eval "$(silver init zsh)" ;;
+        esac
+    fi
+    
+    # Common aliases and functions
+    alias grep='rg'
+    alias find='fd'
+    alias cat='bat'
+    alias top='btop'
+    alias la='lsd -la'
+    alias git-ui='lazygit'
+    alias k='k9s'
+    
+    # File manager
+    if command -v yazi &>/dev/null; then
+        alias fm='yazi'
+        alias ranger='yazi'
+    fi
+    
+    # Enhanced fzf setup
+    if command -v fzf &>/dev/null; then
+        export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+        export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+        export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+        
+        # fzf key bindings and completions
+        if [[ "$os" == "macos" ]] && command -v brew &>/dev/null; then
+            local fzf_base="$(brew --prefix)/opt/fzf/shell"
+            [[ -f "$fzf_base/key-bindings.$shell_type" ]] && source "$fzf_base/key-bindings.$shell_type"
+            [[ -f "$fzf_base/completion.$shell_type" ]] && source "$fzf_base/completion.$shell_type"
+        fi
+    fi
+}
 
-if [[ ! -d "$HOME/.tmux" ]]; then
-    git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-    tmux run-shell ~/.tmux/plugins/tpm/bin/install_plugins
-fi
-
-if [[ -f "$HOME/.etherealize/.tmux.conf" ]]; then
-    mv "$HOME/.etherealize/.tmux.conf" "$HOME/.tmux.conf" 
-fi
-
+# Initialize environment
+setup_etherealize_environment
