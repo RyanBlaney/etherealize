@@ -270,9 +270,9 @@ install_dependencies() {
     # Initialize logging only for Mac (to avoid breaking Linux)
     if [[ "$os" == "Mac" ]]; then
         # Initialize log file and arrays for Mac
-        readonly LOG_FILE="${HOME}/etherealize_install_$(date +%Y%m%d_%H%M%S).log"
-        declare -a FAILED_PACKAGES=()
-        declare -a SUCCESS_PACKAGES=()
+        LOG_FILE="${HOME}/etherealize_install_$(date +%Y%m%d_%H%M%S).log"
+        FAILED_PACKAGES=()
+        SUCCESS_PACKAGES=()
         
         echo "Starting macOS dependency installation..." | tee -a "$LOG_FILE"
     fi
@@ -319,19 +319,37 @@ install_dependencies() {
             ;;
     esac
 
+    # Source Rust environment after installation (critical fix)
+    if [[ -f "$HOME/.cargo/env" ]]; then
+        echo "Configuring Rust environment for current session..."
+        source "$HOME/.cargo/env"
+        export PATH="$HOME/.cargo/bin:$PATH"
+    fi
+
     # Install universal Rust-based tools (cross-platform)
     echo "Installing Rust-based tools..."
-    cargo install ripgrep exa bat zoxide silver fd-find btop stylua
-    cargo install --locked yazi-fm yazi-cli
+    if command -v cargo &>/dev/null; then
+        cargo install ripgrep exa bat zoxide silver fd-find btop stylua
+        cargo install --locked yazi-fm yazi-cli
+    else
+        echo "Warning: cargo not available, skipping Rust-based tools"
+    fi
 
-    # Install ripgrep
-    build_ripgrep
+    # Install ripgrep (if not installed via cargo)
+    if ! command -v rg &>/dev/null; then
+        build_ripgrep
+    fi
     
     # Install Golang tools
-    go install mvdan.cc/gofumpt@latest
-    go install github.com/segmentio/golines@latest
-    go install golang.org/x/tools/cmd/goimports@latest
+    if command -v go &>/dev/null; then
+        go install mvdan.cc/gofumpt@latest
+        go install github.com/segmentio/golines@latest
+        go install golang.org/x/tools/cmd/goimports@latest
+    else
+        echo "Warning: go not available, skipping Go tools"
+    fi
 
+    # Build Neovim and LuaRocks
     build_neovim
     build_luarocks
     

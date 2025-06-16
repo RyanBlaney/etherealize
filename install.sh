@@ -35,6 +35,13 @@ echo "Installing dependencies..."
 source "$CONFIG_DIR/dependencies.sh"
 install_dependencies "$OS"
 
+# Source Rust environment if it was just installed
+if [[ -f "$HOME/.cargo/env" ]]; then
+    echo "Loading Rust environment..."
+    source "$HOME/.cargo/env"
+    export PATH="$HOME/.cargo/bin:$PATH"
+fi
+
 # Install Neovim configuration
 echo "Installing Neovim configuration..."
 if [[ ! -d "$NVIM_DIR" ]]; then
