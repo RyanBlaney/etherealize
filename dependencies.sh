@@ -1,7 +1,7 @@
 #!/bin/bash
+# Enhanced dependencies.sh with macOS support and robust error handling
 
 set -euo pipefail
-shopt -s inherit_errexit
 
 # Color codes for output
 readonly RED='\033[0;31m'
@@ -47,7 +47,7 @@ detect_os() {
 
 # Check for Xcode Command Line Tools (macOS only)
 check_xcode_tools() {
-    [[ "$(detect_os)" != "macos" ]] && return 0
+    [[ "$(detect_os)" != "Mac" ]] && return 0
     
     if xcode-select -p &>/dev/null && [[ -d "$(xcode-select -p)" ]]; then
         return 0
@@ -132,7 +132,7 @@ install_package_safe() {
     local os=$(detect_os)
     
     case "$os" in
-        macos)
+        "Mac")
             if brew install "$package" 2>/dev/null; then
                 SUCCESS_PACKAGES+=("$package")
                 log_success "Installed $package via Homebrew"
@@ -143,9 +143,9 @@ install_package_safe() {
                 return 1
             fi
             ;;
-        linux)
-            # Preserve existing Linux package installation logic
-            install_linux_package "$package"
+        "Arch"|"Ubuntu"|"CentOS")
+            # This will be handled by the existing Linux logic in install_dependencies
+            return 0
             ;;
         *)
             log_error "Unsupported operating system: $os"
@@ -181,7 +181,7 @@ install_rust() {
     # Set non-interactive mode
     export RUSTUP_INIT_SKIP_PATH_CHECK=yes
     
-    if curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y;  then
+    if curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; then
         source ~/.cargo/env
         log_success "Rust and Cargo installed successfully"
         return 0
@@ -200,15 +200,15 @@ install_luarocks() {
     
     local os=$(detect_os)
     case "$os" in
-        macos)
-            if brew install luarocks  2>/dev/null; then
+        "Mac")
+            if brew install luarocks 2>/dev/null; then
                 log_success "LuaRocks installed via Homebrew"
                 return 0
             fi
             ;;
-        linux)
-            # Preserve existing Linux LuaRocks installation
-            install_linux_luarocks
+        "Arch"|"Ubuntu"|"CentOS")
+            # Use the existing build_luarocks function for Linux
+            build_luarocks
             return $?
             ;;
     esac
@@ -220,7 +220,7 @@ install_luarocks() {
 # Enhanced tablet driver installation
 install_tablet_driver() {
     local os=$(detect_os)
-    [[ "$os" != "macos" ]] && return 0
+    [[ "$os" != "Mac" ]] && return 0
     
     log_info "Tablet driver installation requires manual setup on macOS"
     log_info "Recommended: Download OpenTabletDriver from GitHub releases"
@@ -233,19 +233,19 @@ install_tablet_driver() {
 # macOS-specific window management setup
 setup_window_management() {
     local os=$(detect_os)
-    [[ "$os" != "macos" ]] && return 0
+    [[ "$os" != "Mac" ]] && return 0
     
     log_info "Setting up window management (Yabai + skhd)..."
     
     # Install yabai and skhd
-    if brew install koekeishiya/formulae/yabai koekeishiya/formulae/skhd  2>/dev/null; then
+    if brew install koekeishiya/formulae/yabai koekeishiya/formulae/skhd 2>/dev/null; then
         log_success "Yabai and skhd installed"
         
         # Create configuration directories
         mkdir -p ~/.config/yabai ~/.config/skhd
         
         # Start services
-        if brew services start yabai && brew services start skhd;  then
+        if brew services start yabai && brew services start skhd; then
             log_success "Yabai and skhd services started"
         else
             log_warning "Failed to start services - manual configuration required"
@@ -265,46 +265,115 @@ setup_window_management() {
 
 # Main dependency installation function
 install_dependencies() {
-    local os=$(detect_os)
-    log_info "Starting dependency installation for $os"
+    local os="$1"
+    
+    # Initialize logging only for Mac (to avoid breaking Linux)
+    if [[ "$os" == "Mac" ]]; then
+        # Initialize log file and arrays for Mac
+        readonly LOG_FILE="${HOME}/etherealize_install_$(date +%Y%m%d_%H%M%S).log"
+        declare -a FAILED_PACKAGES=()
+        declare -a SUCCESS_PACKAGES=()
+        
+        echo "Starting macOS dependency installation..." | tee -a "$LOG_FILE"
+    fi
     
     case "$os" in
-        macos)
-            # macOS-specific setup
-            install_xcode_tools || log_warning "Xcode tools installation had issues"
-            install_homebrew || { log_error "Homebrew installation failed"; return 1; }
-            
-            # Core packages
-            local -a packages=(
-                "nvim" "fzf" "fd" "ripgrep" "btop" "lsd" "lazygit" "k9s"
-                "yazi" "ffmpeg" "sevenzip" "jq" "poppler" "zoxide" "imagemagick"
-            )
-            
-            for package in "${packages[@]}"; do
-                install_package_safe "$package"
-            done
-            
-            # Cask installations
-            install_cask_safe "ghostty" 
-            install_cask_safe "font-symbols-only-nerd-font" || log_warning "Nerd font installation failed"
-            
-            # Special installations
-            install_rust
-            install_luarocks
-            setup_window_management
-            install_tablet_driver
+        "Windows")
+            echo "Windows support not yet implemented."
             ;;
-            
-        linux)
-            # Preserve existing Linux installation logic
-            install_linux_dependencies
+        "Mac")
+            echo "Installing macOS dependencies..."
+            install_mac_dependencies
             ;;
-            
+        "Arch")
+            echo "Installing Arch Linux dependencies..."
+            sudo pacman -S go python3 python-pip openssh fzf 
+            build_firacode
+
+            mkdir -p "$HOME/.config/silver"
+            cp -r "$CONFIG_DIR/silver.toml" "$HOME/.config/silver/silver.toml"
+           ;;
+        "Ubuntu")
+            echo "Installing Ubuntu/Debian dependencies..."
+            sudo apt update && sudo apt install -y golang python3 python3-pip \
+                openssh-server unzip build-essential fontconfig fzf libssl-dev cmake \
+                gettext libtool libtool-bin autoconf automake g++ pkg-config curl doxygen
+            build_firacode
+
+            mkdir -p "$HOME/.config/silver"
+            cp -r "$CONFIG_DIR/silver.toml" "$HOME/.config/silver/silver.toml"
+            ;;
+        "CentOS")
+            echo "Installing CentOS dependencies..."
+            sudo yum install -y gcc gcc-c++ make cmake gettext libevent libevent-devel ncurses ncurses-devel
+            sudo yum install -y epel-release 
+            sudo yum install -y golang python3 python3-pip openssh
+            sudo dnf install fzf
+            build_firacode
+
+            mkdir -p "$HOME/.config/silver"
+            cp -r "$CONFIG_DIR/silver.toml" "$HOME/.config/silver/silver.toml"
+            ;;
         *)
-            log_error "Unsupported operating system: $os"
-            return 1
+            echo "Unsupported OS: $1"
             ;;
     esac
+
+    # Install universal Rust-based tools (cross-platform)
+    echo "Installing Rust-based tools..."
+    cargo install ripgrep exa bat zoxide silver fd-find btop stylua
+    cargo install --locked yazi-fm yazi-cli
+
+    # Install ripgrep
+    build_ripgrep
+    
+    # Install Golang tools
+    go install mvdan.cc/gofumpt@latest
+    go install github.com/segmentio/golines@latest
+    go install golang.org/x/tools/cmd/goimports@latest
+
+    build_neovim
+    build_luarocks
+    
+    # Generate report only for Mac
+    if [[ "$os" == "Mac" ]]; then
+        generate_report
+    fi
+}
+
+# New macOS-specific installation function
+install_mac_dependencies() {
+    # macOS-specific setup
+    install_xcode_tools || log_warning "Xcode tools installation had issues"
+    install_homebrew || { log_error "Homebrew installation failed"; return 1; }
+    
+    # Core packages via Homebrew
+    local -a packages=(
+        "neovim" "fzf" "fd" "ripgrep" "btop" "lsd" "lazygit" "k9s"
+        "yazi" "ffmpeg" "sevenzip" "jq" "poppler" "zoxide" "imagemagick"
+        "go" "python3" "openssh" "cmake" "pkg-config" "curl"
+    )
+    
+    # Update Homebrew
+    brew update || log_warning "Homebrew update failed"
+    
+    for package in "${packages[@]}"; do
+        install_package_safe "$package"
+    done
+    
+    # Cask installations
+    install_cask_safe "ghostty"
+    install_cask_safe "font-symbols-only-nerd-font" || log_warning "Nerd font installation failed"
+    
+    # Special installations
+    install_rust
+    install_luarocks
+    setup_window_management
+    install_tablet_driver
+    
+    # macOS Silver config
+    mkdir -p "$HOME/Library/Preferences/rs.silver/"
+    [[ -f "$CONFIG_DIR/silver.toml" ]] && cp "$CONFIG_DIR/silver.toml" "$HOME/Library/Preferences/rs.silver/silver.toml"
 }
 
 # Verification function
@@ -312,7 +381,7 @@ verify_installations() {
     local -a tools=("nvim" "fzf" "fd" "rg" "btop" "lsd" "lazygit" "k9s" "yazi")
     local os=$(detect_os)
     
-    [[ "$os" == "macos" ]] && tools+=("brew" "cargo")
+    [[ "$os" == "Mac" ]] && tools+=("brew" "cargo")
     
     log_info "Verifying installations..."
     
@@ -350,6 +419,83 @@ generate_report() {
     fi
     
     echo -e "${BLUE}===============================================${NC}"
+}
+
+# Your existing Linux build functions (preserved)
+build_ripgrep() {
+    git clone https://github.com/BurntSushi/ripgrep.git ~/ripgrep
+    cd ~/ripgrep
+    cargo build --release --features 'pcre2'
+    sudo mv target/release/rg ~/.cargo/bin/ripgrep
+    rm -rf ~/ripgrep
+}
+
+build_firacode() {
+    cd ~
+    curl -L -o FiraCode.zip https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip
+    unzip FiraCode.zip -d FiraCode
+    mkdir -p ~/.local/share/fonts
+    cp FiraCode/ttf/*.ttf ~/.local/share/fonts/
+    fc-cache -fv
+    rm -rf ~/FiraCode.zip ~/FiraCode
+}
+
+build_firacode_mac() {
+    cd ~
+    curl -L -o FiraCode.zip https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip
+    unzip FiraCode.zip -d FiraCode
+    mkdir -p ~/.local/share/fonts
+    cp FiraCode/ttf/*.ttf ~/Library/Fonts/
+    fc-cache -fv
+    rm -rf ~/FiraCode.zip ~/FiraCode
+}
+
+build_tmux() {
+    curl -L -O https://github.com/tmux/tmux/releases/download/3.5/tmux-3.5.tar.gz
+    tar -zxf tmux-3.5.tar.gz
+    cd tmux-3.5
+    ./configure
+    make
+    sudo make install
+    cd ..
+    rm -rf tmux-3.5 tmux-3.5.tar.gz
+}
+
+build_neovim() {
+    echo "Building Neovim from source..."
+    git clone https://github.com/neovim/neovim.git ~/tmp/neovim
+    cd ~/tmp/neovim
+    git checkout stable
+    make CMAKE_BUILD_TYPE=RelWithDebInfo
+    sudo make install
+    cd ~
+    rm -rf ~/tmp/neovim
+    if [ ! -s "~/tmp" ]; then
+        rm -rf ~/tmp
+    fi
+    echo "Neovim installed successfully!"
+}
+
+build_luarocks() {
+    echo "Building Lua from source..."
+    curl -R -O https://www.lua.org/ftp/lua-5.4.4.tar.gz
+    tar zxf lua-5.4.4.tar.gz
+    cd lua-5.4.4
+    make linux
+    sudo make install
+    cd ..
+    rm -rf lua-5.4.4 lua-5.4.4.tar.gz
+
+    echo "Building LuaRocks from source..."
+    curl -R -O https://luarocks.github.io/luarocks/releases/luarocks-3.11.1.tar.gz
+    tar zxpf luarocks-3.11.1.tar.gz
+    cd luarocks-3.11.1
+    ./configure --lua-suffix=5.4 --with-lua-include=/usr/local/include
+    make
+    sudo make install    
+    cd ..
+    rm -rf luarocks-3.11.1.tar.gz luarocks-3.11.1
+    echo "LuaRocks installed successfully!"
 }
 
 # Setup error handling

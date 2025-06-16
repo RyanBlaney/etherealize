@@ -1,30 +1,31 @@
-# OS and shell detection
+# ~/.etherealize/bashrc_additions
+# Cross-shell configuration for bash and zsh
+
+# Detect current shell
+if [[ -n "$ZSH_VERSION" ]]; then
+    CURRENT_SHELL="zsh"
+elif [[ -n "$BASH_VERSION" ]]; then
+    CURRENT_SHELL="bash"
+else
+    CURRENT_SHELL="unknown"
+fi
+
+# OS and architecture detection
 detect_os() {
     case "$(uname -s)" in
-        Darwin*) echo "macos" ;;
-        Linux*)  echo "linux" ;;
+        Darwin*) echo "Mac" ;;
+        Linux*)  echo "Linux" ;;
         *)       echo "unknown" ;;
     esac
-}
-
-detect_shell() {
-    if [[ -n "$ZSH_VERSION" ]]; then
-        echo "zsh"
-    elif [[ -n "$BASH_VERSION" ]]; then
-        echo "bash"
-    else
-        basename "$SHELL"
-    fi
 }
 
 # Environment setup
 setup_etherealize_environment() {
     local os=$(detect_os)
-    local shell_type=$(detect_shell)
     
     # macOS-specific setup
-    if [[ "$os" == "macos" ]]; then
-        # Homebrew environment
+    if [[ "$os" == "Mac" ]]; then
+        # Homebrew environment (multiple fallback paths)
         if command -v brew &>/dev/null; then
             eval "$(brew shellenv)"
         elif [[ -x "/opt/homebrew/bin/brew" ]]; then
@@ -36,69 +37,187 @@ setup_etherealize_environment() {
         # Add common macOS paths
         export PATH="/usr/local/bin:$PATH"
         export PATH="/System/Cryptexes/App/usr/bin:$PATH"
-        
-        # macOS-specific aliases
-        alias ls='lsd'
-        alias ll='lsd -la'
-        alias tree='lsd --tree'
     fi
     
     # Cross-platform Rust setup
-    [[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+    if [[ -f "$HOME/.cargo/env" ]]; then
+        source "$HOME/.cargo/env"
+    fi
     
-    # ble.sh setup (cross-platform)
-    if [[ "$shell_type" == "bash" ]] && [[ -f "$HOME/.local/share/blesh/ble.sh" ]]; then
+    # Add Rust tools to PATH
+    export PATH="$HOME/.cargo/bin:$PATH"
+    
+    # ble.sh setup (bash only)
+    if [[ "$CURRENT_SHELL" == "bash" ]] && [[ -f "$HOME/.local/share/blesh/ble.sh" ]]; then
         source "$HOME/.local/share/blesh/ble.sh"
     fi
     
-    # tmux setup (cross-platform)
-    if command -v tmux &>/dev/null && [[ -z "$TMUX" ]] && [[ "$-" == *i* ]]; then
-        # Auto-attach to tmux session
-        if tmux has-session 2>/dev/null; then
-            exec tmux attach
-        else
-            exec tmux new-session
-        fi
-    fi
-    
-    # Silver prompt setup (if available)
+    # Silver prompt setup (cross-shell)
     if command -v silver &>/dev/null; then
-        export SILVER_SHELL="$shell_type"
-        case "$shell_type" in
+        case "$CURRENT_SHELL" in
             bash) eval "$(silver init bash)" ;;
             zsh)  eval "$(silver init zsh)" ;;
         esac
     fi
     
-    # Common aliases and functions
-    alias grep='rg'
-    alias find='fd'
-    alias cat='bat'
-    alias top='btop'
-    alias la='lsd -la'
-    alias git-ui='lazygit'
-    alias k='k9s'
-    
-    # File manager
-    if command -v yazi &>/dev/null; then
-        alias fm='yazi'
-        alias ranger='yazi'
-    fi
-    
-    # Enhanced fzf setup
+    # Enhanced fzf setup (cross-shell)
     if command -v fzf &>/dev/null; then
         export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
         export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
         export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+        export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border"
         
         # fzf key bindings and completions
-        if [[ "$os" == "macos" ]] && command -v brew &>/dev/null; then
+        if [[ "$os" == "Mac" ]] && command -v brew &>/dev/null; then
             local fzf_base="$(brew --prefix)/opt/fzf/shell"
-            [[ -f "$fzf_base/key-bindings.$shell_type" ]] && source "$fzf_base/key-bindings.$shell_type"
-            [[ -f "$fzf_base/completion.$shell_type" ]] && source "$fzf_base/completion.$shell_type"
+            if [[ -f "$fzf_base/key-bindings.$CURRENT_SHELL" ]]; then
+                source "$fzf_base/key-bindings.$CURRENT_SHELL"
+            fi
+            if [[ -f "$fzf_base/completion.$CURRENT_SHELL" ]]; then
+                source "$fzf_base/completion.$CURRENT_SHELL"
+            fi
+        fi
+        
+        # Manual key bindings for systems without fzf shell integration
+        if [[ "$CURRENT_SHELL" == "bash" ]]; then
+            bind '"\C-r": "fzf-history-widget"' 2>/dev/null || true
+        fi
+    fi
+    
+    # zoxide setup (cross-shell)
+    if command -v zoxide &>/dev/null; then
+        case "$CURRENT_SHELL" in
+            bash) eval "$(zoxide init bash)" ;;
+            zsh)  eval "$(zoxide init zsh)" ;;
+        esac
+    fi
+}
+
+# Common aliases (cross-shell)
+setup_aliases() {
+    # Enhanced ls commands
+    if command -v lsd &>/dev/null; then
+        alias ls='lsd'
+        alias ll='lsd -la'
+        alias la='lsd -la'
+        alias tree='lsd --tree'
+    elif command -v exa &>/dev/null; then
+        alias ls='exa --group-directories-first --icons'
+        alias ll='exa -l --group-directories-first --icons'
+        alias la='exa -la --group-directories-first --icons'
+        alias tree='exa --tree'
+    fi
+    
+    # Better cat, grep, find
+    command -v bat &>/dev/null && alias cat='bat --style=plain --paging=never'
+    command -v rg &>/dev/null && alias grep='rg'
+    command -v fd &>/dev/null && alias find='fd'
+    
+    # System monitoring
+    command -v btop &>/dev/null && alias top='btop'
+    command -v htop &>/dev/null && alias htop='btop'
+    
+    # Git and Kubernetes
+    command -v lazygit &>/dev/null && alias git-ui='lazygit'
+    command -v k9s &>/dev/null && alias k='k9s'
+    
+    # File manager
+    if command -v yazi &>/dev/null; then
+        alias fm='yazi'
+        alias yy='yazi'
+        alias ranger='yazi'
+    fi
+    
+    # Editor
+    command -v nvim &>/dev/null && alias vi='nvim' && alias vim='nvim'
+}
+
+# Useful functions (cross-shell)
+setup_functions() {
+    # Make directory and cd into it
+    mkcd() {
+        mkdir -p "$1" && cd "$1"
+    }
+    
+    # Extract various archive formats
+    extract() {
+        case "$1" in
+            *.tar.bz2) tar xjf "$1" ;;
+            *.tar.gz)  tar xzf "$1" ;;
+            *.bz2)     bunzip2 "$1" ;;
+            *.rar)     unrar x "$1" ;;
+            *.gz)      gunzip "$1" ;;
+            *.tar)     tar xf "$1" ;;
+            *.tbz2)    tar xjf "$1" ;;
+            *.tgz)     tar xzf "$1" ;;
+            *.zip)     unzip "$1" ;;
+            *.7z)      7z x "$1" ;;
+            *)         echo "Unknown file type: $1" ;;
+        esac
+    }
+    
+    # Enhanced yazi with directory changing
+    if command -v yazi &>/dev/null; then
+        y() {
+            local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+            yazi "$@" --cwd-file="$tmp"
+            if cwd="$(command cat -- "$tmp")" && [[ -n "$cwd" ]] && [[ "$cwd" != "$PWD" ]]; then
+                builtin cd -- "$cwd"
+            fi
+            rm -f -- "$tmp"
+        }
+    fi
+}
+
+# tmux auto-attach (optional - can be commented out if not desired)
+setup_tmux() {
+    if command -v tmux &>/dev/null && [[ -z "$TMUX" ]] && [[ "$-" == *i* ]]; then
+        # Only auto-attach in interactive shells, not in scripts
+        if [[ -t 0 ]] && [[ -t 1 ]] && [[ -t 2 ]]; then
+            if tmux has-session 2>/dev/null; then
+                echo "Attaching to existing tmux session..."
+                exec tmux attach
+            else
+                echo "Creating new tmux session..."
+                exec tmux new-session
+            fi
         fi
     fi
 }
 
-# Initialize environment
+# Install ble.sh if not present (bash only)
+setup_blesh() {
+    if [[ "$CURRENT_SHELL" == "bash" ]] && [[ ! -d "$HOME/.local/share/blesh" ]]; then
+        echo "Installing ble.sh for enhanced bash experience..."
+        git clone --recursive --depth 1 --shallow-submodules https://github.com/akinomyoga/ble.sh.git /tmp/ble.sh
+        make -C /tmp/ble.sh install PREFIX="$HOME/.local"
+        rm -rf /tmp/ble.sh
+        
+        if [[ -f "$HOME/.local/share/blesh/ble.sh" ]]; then
+            source "$HOME/.local/share/blesh/ble.sh"
+        fi
+    fi
+}
+
+# Setup tmux plugin manager
+setup_tmux_plugins() {
+    if [[ ! -d "$HOME/.tmux/plugins/tpm" ]] && command -v tmux &>/dev/null; then
+        echo "Installing tmux plugin manager..."
+        git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+    fi
+    
+    # Copy tmux config if it exists
+    if [[ -f "$HOME/.etherealize/.tmux.conf" ]] && [[ ! -f "$HOME/.tmux.conf" ]]; then
+        cp "$HOME/.etherealize/.tmux.conf" "$HOME/.tmux.conf"
+    fi
+}
+
+# Initialize everything
 setup_etherealize_environment
+setup_aliases
+setup_functions
+setup_blesh
+setup_tmux_plugins
+
+# Optionally enable tmux auto-attach (comment out if not desired)
+# setup_tmux
