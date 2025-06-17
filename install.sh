@@ -21,26 +21,22 @@ source "$CONFIG_DIR/helpers.sh"
 OS=$(detect_os)
 echo "Detected OS: $OS"
 
-# Ensure Rust is installed
+# Ensure Rust is installed first (before dependencies)
 if ! command -v cargo &> /dev/null; then
     echo "Rust is not installed. Installing..."
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     source "$HOME/.cargo/env"
+    export PATH="$HOME/.cargo/bin:$PATH"
 else
     echo "Rust is already installed."
+    # Still source it to make sure it's available
+    [[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
 fi
 
 # Install dependencies
 echo "Installing dependencies..."
 source "$CONFIG_DIR/dependencies.sh"
 install_dependencies "$OS"
-
-# Source Rust environment if it was just installed
-if [[ -f "$HOME/.cargo/env" ]]; then
-    echo "Loading Rust environment..."
-    source "$HOME/.cargo/env"
-    export PATH="$HOME/.cargo/bin:$PATH"
-fi
 
 # Install Neovim configuration
 echo "Installing Neovim configuration..."
